@@ -31,7 +31,6 @@ BLUERECT   = pygame.Rect(XMARGIN + BUTTONSIZE + BUTTONGAPSIZE, YMARGIN, BUTTONSI
 REDRECT    = pygame.Rect(XMARGIN, YMARGIN + BUTTONSIZE + BUTTONGAPSIZE, BUTTONSIZE, BUTTONSIZE)
 GREENRECT  = pygame.Rect(XMARGIN + BUTTONSIZE + BUTTONGAPSIZE, YMARGIN + BUTTONSIZE + BUTTONGAPSIZE, BUTTONSIZE, BUTTONSIZE)
 
-
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
     global BEEP1, BEEP2, BEEP3, BEEP4, BG_IMAGE
@@ -73,15 +72,14 @@ def main():
     if BG_IMAGE:
         DISPLAYSURF.blit(BG_IMAGE, (0, 0))
     else:
-        DISPLAYSURF.fill
+        DISPLAYSURF.fill(bgColor)
 
     loadingText = BASICFONT.render("Please wait for the game to load.", True, BLACK)
     loadingRect = loadingText.get_rect(center=(WINDOWWIDTH//2, WINDOWHEIGHT//2))
     DISPLAYSURF.blit(loadingText, loadingRect)
-
     pygame.display.update()
     pygame.time.wait(3000)
-    
+
     while True:
         clickedButton = None
 
@@ -93,11 +91,21 @@ def main():
 
         drawButtons()
 
-        # Score (now black since bg is white)
+        # Score
         scoreSurf = BASICFONT.render('Score: ' + str(score), True, BLACK)
         DISPLAYSURF.blit(scoreSurf, (520, 10))
 
         checkForQuit()
+
+        mousex, mousey = pygame.mouse.get_pos()
+        hoverButton = getButtonClicked(mousex, mousey)
+        
+        # Draw glow if hovering
+        if hoverButton:
+            glowSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
+            glowSurf.fill((255, 255, 255, 60))  # semi-transparent white
+            rect = getRectFromColor(hoverButton)
+            DISPLAYSURF.blit(glowSurf, rect.topleft)
 
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONUP:
@@ -111,8 +119,7 @@ def main():
             pattern.append(random.choice((YELLOW, BLUE, RED, GREEN)))
 
             for button in pattern:
-                flashButtonAnimation(button)
-                pygame.time.delay(30)
+                flashButtonAnimation(button)  # sound synced with fade
 
             waitingForInput = True
             lastClickTime = time.time()
@@ -130,7 +137,6 @@ def main():
 
             elif (clickedButton and clickedButton != pattern[currentStep]) or \
                  (currentStep != 0 and time.time() - lastClickTime > TIMEOUT):
-
                 gameOverAnimation()
                 pattern = []
                 currentStep = 0
@@ -141,16 +147,19 @@ def main():
         pygame.display.update()
         FPSCLOCK.tick(FPS)
 
-
 def terminate():
     pygame.quit()
     sys.exit()
-
 
 def checkForQuit():
     for event in pygame.event.get(QUIT):
         terminate()
 
+def getRectFromColor(color):
+    if color == YELLOW: return YELLOWRECT
+    if color == BLUE: return BLUERECT
+    if color == RED: return REDRECT
+    if color == GREEN: return GREENRECT
 
 def flashButtonAnimation(color):
     if color == YELLOW:
@@ -170,31 +179,28 @@ def flashButtonAnimation(color):
         flashColor = BRIGHTGREEN
         rect = GREENRECT
 
-    sound.play()
+    sound.play()  # play sound at start of flash
 
     origSurf = DISPLAYSURF.copy()
-    flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE)).convert_alpha()
-
+    flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
     r, g, b = flashColor
 
-    # Smooth fade in
-    for alpha in range(0, 255, 39):
+    # Smooth fade in/out
+    for alpha in range(0, 255, 40):
         DISPLAYSURF.blit(origSurf, (0, 0))
         flashSurf.fill((r, g, b, alpha))
         DISPLAYSURF.blit(flashSurf, rect.topleft)
         pygame.display.update()
-        FPSCLOCK.tick(60)
+        FPSCLOCK.tick(FPS)
 
-    # Smooth fade out
-    for alpha in range(255, 0, -30):
+    for alpha in range(255, 0, -40):
         DISPLAYSURF.blit(origSurf, (0, 0))
         flashSurf.fill((r, g, b, alpha))
         DISPLAYSURF.blit(flashSurf, rect.topleft)
         pygame.display.update()
-        FPSCLOCK.tick(60)
+        FPSCLOCK.tick(FPS)
 
     DISPLAYSURF.blit(origSurf, (0, 0))
-
 
 def drawButtons():
     pygame.draw.rect(DISPLAYSURF, YELLOW, YELLOWRECT)
@@ -213,7 +219,6 @@ def drawButtons():
     DISPLAYSURF.blit(text3, text3.get_rect(center=REDRECT.center))
     DISPLAYSURF.blit(text4, text4.get_rect(center=GREENRECT.center))
 
-
 def gameOverAnimation():
     for i in range(3):
         DISPLAYSURF.fill(WHITE)
@@ -223,18 +228,12 @@ def gameOverAnimation():
         pygame.display.update()
         pygame.time.wait(200)
 
-
 def getButtonClicked(x, y):
-    if YELLOWRECT.collidepoint((x, y)):
-        return YELLOW
-    elif BLUERECT.collidepoint((x, y)):
-        return BLUE
-    elif REDRECT.collidepoint((x, y)):
-        return RED
-    elif GREENRECT.collidepoint((x, y)):
-        return GREEN
+    if YELLOWRECT.collidepoint((x, y)): return YELLOW
+    if BLUERECT.collidepoint((x, y)): return BLUE
+    if REDRECT.collidepoint((x, y)): return RED
+    if GREENRECT.collidepoint((x, y)): return GREEN
     return None
-
 
 if __name__ == '__main__':
     main()
