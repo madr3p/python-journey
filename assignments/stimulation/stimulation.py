@@ -1,7 +1,7 @@
 import random, sys, time, pygame
 from pygame.locals import *
 
-FPS = 30
+FPS = 60
 WINDOWWIDTH = 640
 WINDOWHEIGHT = 480
 FLASHDELAY = 200
@@ -112,7 +112,7 @@ def main():
 
             for button in pattern:
                 flashButtonAnimation(button)
-                pygame.time.wait(FLASHDELAY)
+                pygame.time.delay(30)
 
             waitingForInput = True
             lastClickTime = time.time()
@@ -170,19 +170,28 @@ def flashButtonAnimation(color):
         flashColor = BRIGHTGREEN
         rect = GREENRECT
 
+    sound.play()
+
     origSurf = DISPLAYSURF.copy()
     flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE)).convert_alpha()
 
-    sound.play()
-
     r, g, b = flashColor
 
-    for alpha in range(0, 255, 50):
+    # Smooth fade in
+    for alpha in range(0, 255, 39):
         DISPLAYSURF.blit(origSurf, (0, 0))
         flashSurf.fill((r, g, b, alpha))
         DISPLAYSURF.blit(flashSurf, rect.topleft)
         pygame.display.update()
-        FPSCLOCK.tick(FPS)
+        FPSCLOCK.tick(60)
+
+    # Smooth fade out
+    for alpha in range(255, 0, -30):
+        DISPLAYSURF.blit(origSurf, (0, 0))
+        flashSurf.fill((r, g, b, alpha))
+        DISPLAYSURF.blit(flashSurf, rect.topleft)
+        pygame.display.update()
+        FPSCLOCK.tick(60)
 
     DISPLAYSURF.blit(origSurf, (0, 0))
 
