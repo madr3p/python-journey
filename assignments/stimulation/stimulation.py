@@ -20,7 +20,6 @@ BRIGHTBLUE   = (186, 225, 255)
 BLUE         = (150, 200, 240)
 BRIGHTYELLOW = (255, 255, 186)
 YELLOW       = (240, 240, 150)
-DARKGRAY     = (100, 100, 100)
 
 bgColor = BLACK
 
@@ -35,7 +34,7 @@ GREENRECT  = pygame.Rect(XMARGIN + BUTTONSIZE + BUTTONGAPSIZE, YMARGIN + BUTTONS
 
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
-    global BEEP1, BEEP2, BEEP3, BEEP4
+    global BEEP1, BEEP2, BEEP3, BEEP4, BG_IMAGE
 
     pygame.init()
     pygame.mixer.init()
@@ -44,16 +43,17 @@ def main():
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     pygame.display.set_caption('Simon Game')
 
-    BASICFONT = pygame.font.SysFont(None, 20)
+    BASICFONT = pygame.font.SysFont(None, 30)
 
-    infoSurf = BASICFONT.render('Repeat pattern (Q,W,A,S or mouse)', True, DARKGRAY)
-    infoRect = infoSurf.get_rect()
-    infoRect.topleft = (10, WINDOWHEIGHT - 25)
+    # Background image
+    try:
+        BG_IMAGE = pygame.image.load('background.jpg')
+        BG_IMAGE = pygame.transform.scale(BG_IMAGE, (WINDOWWIDTH, WINDOWHEIGHT))
+    except:
+        BG_IMAGE = None
 
-    # Dummy sound (if files missing)
     class DummySound:
-        def play(self):
-            pass
+        def play(self): pass
 
     try:
         BEEP1 = pygame.mixer.Sound('beep1.ogg')
@@ -61,10 +61,7 @@ def main():
         BEEP3 = pygame.mixer.Sound('beep3.ogg')
         BEEP4 = pygame.mixer.Sound('beep4.ogg')
     except:
-        BEEP1 = DummySound()
-        BEEP2 = DummySound()
-        BEEP3 = DummySound()
-        BEEP4 = DummySound()
+        BEEP1 = BEEP2 = BEEP3 = BEEP4 = DummySound()
 
     pattern = []
     currentStep = 0
@@ -74,12 +71,18 @@ def main():
 
     while True:
         clickedButton = None
-        DISPLAYSURF.fill(bgColor)
+
+        # Background
+        if BG_IMAGE:
+            DISPLAYSURF.blit(BG_IMAGE, (0, 0))
+        else:
+            DISPLAYSURF.fill(bgColor)
+
         drawButtons()
 
-        scoreSurf = BASICFONT.render('Score: ' + str(score), True, WHITE)
+        # Score (now black since bg is white)
+        scoreSurf = BASICFONT.render('Score: ' + str(score), True, BLACK)
         DISPLAYSURF.blit(scoreSurf, (520, 10))
-        DISPLAYSURF.blit(infoSurf, infoRect)
 
         checkForQuit()
 
@@ -87,16 +90,6 @@ def main():
             if event.type == MOUSEBUTTONUP:
                 mousex, mousey = event.pos
                 clickedButton = getButtonClicked(mousex, mousey)
-
-            elif event.type == KEYDOWN:
-                if event.key == K_q:
-                    clickedButton = YELLOW
-                elif event.key == K_w:
-                    clickedButton = BLUE
-                elif event.key == K_a:
-                    clickedButton = RED
-                elif event.key == K_s:
-                    clickedButton = GREEN
 
         if not waitingForInput:
             pygame.display.update()
@@ -118,7 +111,6 @@ def main():
                 lastClickTime = time.time()
 
                 if currentStep == len(pattern):
-                    changeBackgroundAnimation()
                     score += 1
                     waitingForInput = False
                     currentStep = 0
@@ -132,7 +124,6 @@ def main():
                 waitingForInput = False
                 score = 0
                 pygame.time.wait(1000)
-                changeBackgroundAnimation()
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
@@ -146,10 +137,6 @@ def terminate():
 def checkForQuit():
     for event in pygame.event.get(QUIT):
         terminate()
-    for event in pygame.event.get(KEYUP):
-        if event.key == K_ESCAPE:
-            terminate()
-        pygame.event.post(event)
 
 
 def flashButtonAnimation(color):
@@ -175,9 +162,7 @@ def flashButtonAnimation(color):
 
     sound.play()
 
-    r = flashColor[0]
-    g = flashColor[1]
-    b = flashColor[2]
+    r, g, b = flashColor
 
     for alpha in range(0, 255, 50):
         DISPLAYSURF.blit(origSurf, (0, 0))
@@ -195,7 +180,7 @@ def drawButtons():
     pygame.draw.rect(DISPLAYSURF, RED, REDRECT)
     pygame.draw.rect(DISPLAYSURF, GREEN, GREENRECT)
 
-    # Draw numbers
+    # Numbers
     text1 = BASICFONT.render("1", True, BLACK)
     text2 = BASICFONT.render("2", True, BLACK)
     text3 = BASICFONT.render("3", True, BLACK)
@@ -205,11 +190,6 @@ def drawButtons():
     DISPLAYSURF.blit(text2, text2.get_rect(center=BLUERECT.center))
     DISPLAYSURF.blit(text3, text3.get_rect(center=REDRECT.center))
     DISPLAYSURF.blit(text4, text4.get_rect(center=GREENRECT.center))
-
-
-def changeBackgroundAnimation():
-    global bgColor
-    bgColor = (random.randint(0,255), random.randint(0,255), random.randint(0,255))
 
 
 def gameOverAnimation():
