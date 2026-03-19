@@ -195,6 +195,17 @@ def drawButtons():
     pygame.draw.rect(DISPLAYSURF, RED, REDRECT)
     pygame.draw.rect(DISPLAYSURF, GREEN, GREENRECT)
 
+    # Draw numbers
+    text1 = BASICFONT.render("1", True, BLACK)
+    text2 = BASICFONT.render("2", True, BLACK)
+    text3 = BASICFONT.render("3", True, BLACK)
+    text4 = BASICFONT.render("4", True, BLACK)
+
+    DISPLAYSURF.blit(text1, text1.get_rect(center=YELLOWRECT.center))
+    DISPLAYSURF.blit(text2, text2.get_rect(center=BLUERECT.center))
+    DISPLAYSURF.blit(text3, text3.get_rect(center=REDRECT.center))
+    DISPLAYSURF.blit(text4, text4.get_rect(center=GREENRECT.center))
+
 
 def changeBackgroundAnimation():
     global bgColor
