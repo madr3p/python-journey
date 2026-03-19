@@ -69,6 +69,19 @@ def main():
     score = 0
     waitingForInput = False
 
+    # Loading screen
+    if BG_IMAGE:
+        DISPLAYSURF.blit(BG_IMAGE, (0, 0))
+    else:
+        DISPLAYSURF.fill
+
+    loadingText = BASICFONT.render("Please wait for the game to load.", True, BLACK)
+    loadingRect = loadingText.get_rect(center=(WINDOWWIDTH//2, WINDOWHEIGHT//2))
+    DISPLAYSURF.blit(loadingText, loadingRect)
+
+    pygame.display.update()
+    pygame.time.wait(3000)
+    
     while True:
         clickedButton = None
 
