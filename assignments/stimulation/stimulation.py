@@ -9,18 +9,18 @@ BUTTONSIZE = 200
 BUTTONGAPSIZE = 20
 TIMEOUT = 4
 
-# Colors
+# Colors (Pastel Theme)
 WHITE        = (255, 255, 255)
 BLACK        = (0, 0, 0)
-BRIGHTRED    = (255, 0, 0)
-RED          = (155, 0, 0)
-BRIGHTGREEN  = (0, 255, 0)
-GREEN        = (0, 155, 0)
-BRIGHTBLUE   = (0, 0, 255)
-BLUE         = (0, 0, 155)
-BRIGHTYELLOW = (255, 255, 0)
-YELLOW       = (155, 155, 0)
-DARKGRAY     = (40, 40, 40)
+BRIGHTRED    = (255, 183, 197)
+RED          = (255, 153, 170)
+BRIGHTGREEN  = (186, 255, 201)
+GREEN        = (150, 230, 180)
+BRIGHTBLUE   = (186, 225, 255)
+BLUE         = (150, 200, 240)
+BRIGHTYELLOW = (255, 255, 186)
+YELLOW       = (240, 240, 150)
+DARKGRAY     = (100, 100, 100)
 
 bgColor = BLACK
 
