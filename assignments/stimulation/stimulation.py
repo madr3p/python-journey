@@ -8,7 +8,6 @@ BUTTONSIZE = 120
 BUTTONGAPSIZE = 20
 TIMEOUT = 4
 
-# Colors
 WHITE        = (255, 255, 255)
 BLACK        = (0, 0, 0)
 YELLOW       = (240, 240, 150)
@@ -30,14 +29,8 @@ BOTTOM_PADDING = 40
 XMARGIN = int((WINDOWWIDTH - (3 * BUTTONSIZE) - 2 * BUTTONGAPSIZE) / 2)
 YMARGIN = int((WINDOWHEIGHT - (3 * BUTTONSIZE) - 2 * BUTTONGAPSIZE - BOTTOM_PADDING) / 2) + 40
 
-# Buttons 3x3 grid
-BUTTON_COLORS = [YELLOW, BLUE, RED,
-                 GREEN, ORANGE, PURPLE,
-                 PINK, CYAN, BRIGHTYELLOW]
-
-BRIGHT_COLORS = [BRIGHTYELLOW, BRIGHTBLUE, BRIGHTRED,
-                 BRIGHTGREEN, ORANGE, PURPLE,
-                 PINK, CYAN, WHITE]
+BUTTON_COLORS = [YELLOW, BLUE, RED, GREEN, ORANGE, PURPLE, PINK, CYAN, BRIGHTYELLOW]
+BRIGHT_COLORS = [BRIGHTYELLOW, BRIGHTBLUE, BRIGHTRED, BRIGHTGREEN, ORANGE, PURPLE, PINK, CYAN, WHITE]
 
 BUTTONS = [
     {"color": BUTTON_COLORS[row*3 + col], 
@@ -48,10 +41,9 @@ BUTTONS = [
     for row in range(3) for col in range(3)
 ]
 
-# --- Super Mega Obfuscated Highscore (1MB) ---
 KEY = 85
 FILE_SIZE = 25000
-SPLITS = 20         
+SPLITS = 20
 HEADER = b'\xAA\x55'
 
 def save_highscore(score):
@@ -61,12 +53,10 @@ def save_highscore(score):
     payload = bytes([high_byte ^ KEY, low_byte ^ KEY, checksum ^ KEY])
 
     data = bytearray(random.randint(0, 255) for _ in range(FILE_SIZE))
-    
-    # Split the payload across multiple random positions
-    for i in range(SPLITS):
+    for _ in range(SPLITS):
         pos = random.randint(0, FILE_SIZE - 5)
-        data[pos:pos+2] = HEADER          # header
-        data[pos+2:pos+5] = payload       # score + checksum
+        data[pos:pos+2] = HEADER
+        data[pos+2:pos+5] = payload
 
     with open('highscore.dat', 'wb') as f:
         f.write(data)
@@ -86,10 +76,8 @@ def load_highscore():
     except:
         return 0
 
-# --- Main Game ---
 def main():
-    global FPSCLOCK, DISPLAYSURF, BASICFONT
-    global BEEP, BG_IMAGE, highscore
+    global FPSCLOCK, DISPLAYSURF, BASICFONT, BEEP, BG_IMAGE, highscore
 
     pygame.init()
     pygame.mixer.init()
@@ -97,10 +85,8 @@ def main():
     FPSCLOCK = pygame.time.Clock()
     DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH, WINDOWHEIGHT))
     pygame.display.set_caption('Simon 3x3 Game')
-
     BASICFONT = pygame.font.SysFont(None, 30)
 
-    # Load background
     try:
         BG_IMAGE = pygame.image.load('background.jpg')
         BG_IMAGE = pygame.transform.scale(BG_IMAGE, (WINDOWWIDTH, WINDOWHEIGHT))
@@ -115,7 +101,6 @@ def main():
     except:
         BEEP = DummySound()
 
-    # Load highscore
     highscore = load_highscore()
 
     pattern = []
@@ -127,7 +112,6 @@ def main():
     showNice = False
     niceTimer = 0
 
-    # Loading screen
     if BG_IMAGE:
         DISPLAYSURF.blit(BG_IMAGE, (0,0))
     else:
@@ -172,7 +156,6 @@ def main():
             waitingForInput = True
             currentStep = 0
             lastClickTime = time.time()
-
         else:
             if clickedButton and clickedButton == pattern[currentStep]:
                 flashButtonAnimation(clickedButton)
@@ -191,7 +174,6 @@ def main():
                     if score > highscore:
                         highscore = score
                         save_highscore(highscore)
-
             elif (clickedButton and clickedButton != pattern[currentStep]) or \
                  (currentStep != 0 and time.time() - lastClickTime > TIMEOUT):
                 if clickedButton:
@@ -209,7 +191,6 @@ def main():
         pygame.display.update()
         FPSCLOCK.tick(FPS)
 
-# --- Drawing ---
 def drawTopTexts(score, highscore, showNice, niceTimer):
     scoreX = 50
     niceX = WINDOWWIDTH // 2
@@ -224,7 +205,6 @@ def drawTopTexts(score, highscore, showNice, niceTimer):
         niceRect = niceSurf.get_rect(center=(niceX, textY + scoreSurf.get_height()//2))
         DISPLAYSURF.blit(niceSurf, niceRect)
 
-# --- Utilities ---
 def terminate():
     pygame.quit()
     sys.exit()
@@ -278,7 +258,7 @@ def drawButtons():
         DISPLAYSURF.blit(text, text.get_rect(center=button['rect'].center))
 
 def gameOverAnimation():
-    for i in range(3):
+    for _ in range(3):
         DISPLAYSURF.fill(WHITE)
         pygame.display.update()
         pygame.time.wait(150)
