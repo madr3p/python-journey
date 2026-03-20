@@ -19,6 +19,7 @@ BRIGHTBLUE   = (186, 225, 255)
 BLUE         = (150, 200, 240)
 BRIGHTYELLOW = (255, 255, 186)
 YELLOW       = (240, 240, 150)
+WRONG        = (255, 50, 50)
 
 bgColor = BLACK
 
@@ -159,6 +160,11 @@ def main():
             elif (clickedButton and clickedButton != pattern[currentStep]) or \
                  (currentStep != 0 and time.time() - lastClickTime > TIMEOUT):
 
+                # Wrong click feedback
+                if clickedButton:
+                    flashWrongButton(clickedButton)
+                shakeScreen()
+
                 gameOverAnimation()
                 pattern = []
                 currentStep = 0
@@ -204,7 +210,6 @@ def flashButtonAnimation(color):
         rect = GREENRECT
 
     sound.play()
-
     origSurf = DISPLAYSURF.copy()
     flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
     r, g, b = flashColor
@@ -222,6 +227,21 @@ def flashButtonAnimation(color):
         DISPLAYSURF.blit(flashSurf, rect.topleft)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
+
+def flashWrongButton(color):
+    rect = getRectFromColor(color)
+    flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE))
+    flashSurf.fill(WRONG)
+    DISPLAYSURF.blit(flashSurf, rect.topleft)
+    pygame.display.update()
+    pygame.time.wait(300)
+
+def shakeScreen():
+    origSurf = DISPLAYSURF.copy()
+    for dx, dy in [(5,0), (-5,0), (5,0), (-5,0), (0,0)]:
+        DISPLAYSURF.blit(origSurf, (dx, dy))
+        pygame.display.update()
+        pygame.time.wait(30)
 
 def drawButtons():
     pygame.draw.rect(DISPLAYSURF, YELLOW, YELLOWRECT)
