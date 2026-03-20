@@ -8,7 +8,7 @@ BUTTONSIZE = 120
 BUTTONGAPSIZE = 20
 TIMEOUT = 4
 
-# Colors (Pastel Theme)
+# Colors
 WHITE        = (255, 255, 255)
 BLACK        = (0, 0, 0)
 YELLOW       = (240, 240, 150)
@@ -26,11 +26,11 @@ CYAN         = (150, 255, 255)
 WRONG        = (255, 50, 50)
 
 bgColor = BLACK
-
+BOTTOM_PADDING = 40
 XMARGIN = int((WINDOWWIDTH - (3 * BUTTONSIZE) - 2 * BUTTONGAPSIZE) / 2)
-YMARGIN = int((WINDOWHEIGHT - (3 * BUTTONSIZE) - 2 * BUTTONGAPSIZE) / 2)
+YMARGIN = int((WINDOWHEIGHT - (3 * BUTTONSIZE) - 2 * BUTTONGAPSIZE - BOTTOM_PADDING) / 2) + 40
 
-# Define buttons in a 3x3 grid
+# Buttons 3x3 grid
 BUTTON_COLORS = [YELLOW, BLUE, RED,
                  GREEN, ORANGE, PURPLE,
                  PINK, CYAN, BRIGHTYELLOW]
@@ -48,9 +48,48 @@ BUTTONS = [
     for row in range(3) for col in range(3)
 ]
 
+# --- Super Mega Obfuscated Highscore (1MB) ---
+KEY = 85
+FILE_SIZE = 25000
+SPLITS = 20         
+HEADER = b'\xAA\x55'
+
+def save_highscore(score):
+    high_byte = (score >> 8) & 0xFF
+    low_byte  = score & 0xFF
+    checksum  = (high_byte + low_byte + 13) % 256
+    payload = bytes([high_byte ^ KEY, low_byte ^ KEY, checksum ^ KEY])
+
+    data = bytearray(random.randint(0, 255) for _ in range(FILE_SIZE))
+    
+    # Split the payload across multiple random positions
+    for i in range(SPLITS):
+        pos = random.randint(0, FILE_SIZE - 5)
+        data[pos:pos+2] = HEADER          # header
+        data[pos+2:pos+5] = payload       # score + checksum
+
+    with open('highscore.dat', 'wb') as f:
+        f.write(data)
+
+def load_highscore():
+    try:
+        data = bytearray(open('highscore.dat','rb').read())
+        idx = data.find(HEADER)
+        if idx == -1 or idx + 5 > len(data):
+            return 0
+        high_byte = data[idx+2] ^ KEY
+        low_byte  = data[idx+3] ^ KEY
+        checksum  = data[idx+4] ^ KEY
+        if checksum != (high_byte + low_byte + 13) % 256:
+            return 0
+        return (high_byte << 8) + low_byte
+    except:
+        return 0
+
+# --- Main Game ---
 def main():
     global FPSCLOCK, DISPLAYSURF, BASICFONT
-    global BEEP, BG_IMAGE
+    global BEEP, BG_IMAGE, highscore
 
     pygame.init()
     pygame.mixer.init()
@@ -61,7 +100,7 @@ def main():
 
     BASICFONT = pygame.font.SysFont(None, 30)
 
-    # Background image
+    # Load background
     try:
         BG_IMAGE = pygame.image.load('background.jpg')
         BG_IMAGE = pygame.transform.scale(BG_IMAGE, (WINDOWWIDTH, WINDOWHEIGHT))
@@ -76,6 +115,9 @@ def main():
     except:
         BEEP = DummySound()
 
+    # Load highscore
+    highscore = load_highscore()
+
     pattern = []
     currentStep = 0
     lastClickTime = 0
@@ -87,7 +129,7 @@ def main():
 
     # Loading screen
     if BG_IMAGE:
-        DISPLAYSURF.blit(BG_IMAGE, (0, 0))
+        DISPLAYSURF.blit(BG_IMAGE, (0,0))
     else:
         DISPLAYSURF.fill(bgColor)
 
@@ -99,39 +141,21 @@ def main():
 
     while True:
         clickedButton = None
-
-        # Background
         if BG_IMAGE:
-            DISPLAYSURF.blit(BG_IMAGE, (0, 0))
+            DISPLAYSURF.blit(BG_IMAGE, (0,0))
         else:
             DISPLAYSURF.fill(bgColor)
 
+        drawTopTexts(score, highscore, showNice, niceTimer)
         drawButtons()
-
-        # Score
-        scoreSurf = BASICFONT.render('Score: ' + str(score), True, BLACK)
-        DISPLAYSURF.blit(scoreSurf, (500, 10))
-
-        # Nice text
-        if showNice:
-            if pygame.time.get_ticks() - niceTimer < 800:
-                niceText = BASICFONT.render("Nice!", True, (0, 150, 0))
-                niceRect = niceText.get_rect(center=(WINDOWWIDTH//2, 15))
-                DISPLAYSURF.blit(niceText, niceRect)
-            else:
-                showNice = False
-
         checkForQuit()
 
         mousex, mousey = pygame.mouse.get_pos()
         hoverButton = getButtonClicked(mousex, mousey)
-
-        # Hover glow
         if hoverButton:
             glowSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
-            glowSurf.fill((255, 255, 255, 60))
-            rect = hoverButton['rect']
-            DISPLAYSURF.blit(glowSurf, rect.topleft)
+            glowSurf.fill((255,255,255,60))
+            DISPLAYSURF.blit(glowSurf, hoverButton['rect'].topleft)
 
         for event in pygame.event.get():
             if event.type == MOUSEBUTTONUP:
@@ -141,13 +165,10 @@ def main():
         if not waitingForInput:
             pygame.display.update()
             pygame.time.wait(500)
-
             pattern.append(random.choice(BUTTONS))
-
             for button in pattern:
                 flashButtonAnimation(button)
                 pygame.time.delay(80)
-
             waitingForInput = True
             currentStep = 0
             lastClickTime = time.time()
@@ -157,23 +178,22 @@ def main():
                 flashButtonAnimation(clickedButton)
                 currentStep += 1
                 lastClickTime = time.time()
-
                 if currentStep == len(pattern):
                     streak += 1
                     score += 1
-
                     if streak % 3 == 0:
                         score += 2
                         showNice = True
                         niceTimer = pygame.time.get_ticks()
-
                     waitingForInput = False
                     currentStep = 0
 
+                    if score > highscore:
+                        highscore = score
+                        save_highscore(highscore)
+
             elif (clickedButton and clickedButton != pattern[currentStep]) or \
                  (currentStep != 0 and time.time() - lastClickTime > TIMEOUT):
-
-                # Wrong click feedback
                 if clickedButton:
                     flashWrongButton(clickedButton)
                 shakeScreen()
@@ -189,6 +209,22 @@ def main():
         pygame.display.update()
         FPSCLOCK.tick(FPS)
 
+# --- Drawing ---
+def drawTopTexts(score, highscore, showNice, niceTimer):
+    scoreX = 50
+    niceX = WINDOWWIDTH // 2
+    highscoreX = WINDOWWIDTH - 150
+    textY = 10
+    scoreSurf = BASICFONT.render('Score: {}'.format(score), True, BLACK)
+    DISPLAYSURF.blit(scoreSurf, (scoreX, textY))
+    highSurf = BASICFONT.render('Highscore: {}'.format(highscore), True, BLACK)
+    DISPLAYSURF.blit(highSurf, (highscoreX, textY))
+    if showNice and pygame.time.get_ticks() - niceTimer < 800:
+        niceSurf = BASICFONT.render("Nice!", True, (0,150,0))
+        niceRect = niceSurf.get_rect(center=(niceX, textY + scoreSurf.get_height()//2))
+        DISPLAYSURF.blit(niceSurf, niceRect)
+
+# --- Utilities ---
 def terminate():
     pygame.quit()
     sys.exit()
@@ -199,7 +235,7 @@ def checkForQuit():
 
 def getButtonClicked(x, y):
     for button in BUTTONS:
-        if button['rect'].collidepoint((x, y)):
+        if button['rect'].collidepoint((x,y)):
             return button
     return None
 
@@ -207,18 +243,16 @@ def flashButtonAnimation(button):
     BEEP.play()
     origSurf = DISPLAYSURF.copy()
     flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
-    r, g, b = (50, 50, 50)  # Black flash
-
-    for alpha in range(0, 255, 40):
-        DISPLAYSURF.blit(origSurf, (0, 0))
-        flashSurf.fill((r, g, b, alpha))
+    r,g,b = (50,50,50)
+    for alpha in range(0,255,40):
+        DISPLAYSURF.blit(origSurf,(0,0))
+        flashSurf.fill((r,g,b,alpha))
         DISPLAYSURF.blit(flashSurf, button['rect'].topleft)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
-
-    for alpha in range(255, 0, -40):
-        DISPLAYSURF.blit(origSurf, (0, 0))
-        flashSurf.fill((r, g, b, alpha))
+    for alpha in range(255,0,-40):
+        DISPLAYSURF.blit(origSurf,(0,0))
+        flashSurf.fill((r,g,b,alpha))
         DISPLAYSURF.blit(flashSurf, button['rect'].topleft)
         pygame.display.update()
         FPSCLOCK.tick(FPS)
@@ -232,8 +266,8 @@ def flashWrongButton(button):
 
 def shakeScreen():
     origSurf = DISPLAYSURF.copy()
-    for dx, dy in [(5,0), (-5,0), (5,0), (-5,0), (0,0)]:
-        DISPLAYSURF.blit(origSurf, (dx, dy))
+    for dx, dy in [(5,0),(-5,0),(5,0),(-5,0),(0,0)]:
+        DISPLAYSURF.blit(origSurf,(dx,dy))
         pygame.display.update()
         pygame.time.wait(30)
 
