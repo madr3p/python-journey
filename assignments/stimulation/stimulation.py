@@ -207,7 +207,7 @@ def flashButtonAnimation(button):
     BEEP.play()
     origSurf = DISPLAYSURF.copy()
     flashSurf = pygame.Surface((BUTTONSIZE, BUTTONSIZE), pygame.SRCALPHA)
-    r, g, b = button['bright']
+    r, g, b = (50, 50, 50)  # Black flash
 
     for alpha in range(0, 255, 40):
         DISPLAYSURF.blit(origSurf, (0, 0))
